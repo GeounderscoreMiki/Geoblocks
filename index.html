@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geo-Tetris Mini</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <h1>Geo-Tetris Mini</h1>
+
+    <section id="startScreen" class="card">
+      <h2>Start spil</h2>
+      <label for="playerName">Skriv dit navn:</label>
+      <input id="playerName" type="text" maxlength="20" placeholder="Fx Miki" />
+      <button id="startBtn">Start spil</button>
+      <p class="hint">Mål: Nå 1000 point før game over for at få koordinaten.</p>
+    </section>
+
+    <section id="gameScreen" class="hidden">
+      <div class="topbar card">
+        <div><strong>Spiller:</strong> <span id="currentPlayer">-</span></div>
+        <div><strong>Score:</strong> <span id="score">0</span></div>
+        <div><strong>Mål:</strong> <span id="targetScore">1000</span></div>
+      </div>
+
+      <canvas id="game" width="300" height="600" aria-label="Tetris spillefelt"></canvas>
+
+      <div class="controls card">
+        <p><strong>Kontrol:</strong> ⬅️➡️ flyt, ⬇️ ned, ⬆️ roter, mellemrum = drop</p>
+      </div>
+
+      <div id="message" class="card message hidden"></div>
+
+      <section class="card">
+        <h3>Scoretavle (Top 10)</h3>
+        <ol id="leaderboard"></ol>
+      </section>
+
+      <button id="restartBtn" class="hidden">Spil igen</button>
+    </section>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
