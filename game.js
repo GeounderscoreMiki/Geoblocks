@@ -21,6 +21,7 @@ const scoreEl = document.getElementById("score");
 const targetScoreEl = document.getElementById("targetScore");
 const messageEl = document.getElementById("message");
 const leaderboardEl = document.getElementById("leaderboard");
+const touchButtons = document.querySelectorAll(".touch-btn");
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -313,6 +314,16 @@ function restartGame() {
   startGame();
 }
 
+function handleControlAction(action) {
+  if (!running) return;
+
+  if (action === "left") playerMove(-1);
+  else if (action === "right") playerMove(1);
+  else if (action === "down") playerDrop();
+  else if (action === "rotate") playerRotate();
+  else if (action === "drop") hardDrop();
+}
+
 /***********************
  * EVENTS
  ************************/
@@ -322,14 +333,30 @@ restartBtn.addEventListener("click", restartGame);
 document.addEventListener("keydown", e => {
   if (!running) return;
 
-  if (e.key === "ArrowLeft") playerMove(-1);
-  else if (e.key === "ArrowRight") playerMove(1);
-  else if (e.key === "ArrowDown") playerDrop();
-  else if (e.key === "ArrowUp") playerRotate();
+  if (e.key === "ArrowLeft") handleControlAction("left");
+  else if (e.key === "ArrowRight") handleControlAction("right");
+  else if (e.key === "ArrowDown") handleControlAction("down");
+  else if (e.key === "ArrowUp") handleControlAction("rotate");
   else if (e.code === "Space") {
     e.preventDefault();
-    hardDrop();
+    handleControlAction("drop");
   }
+});
+
+let lastPointerActionAt = 0;
+touchButtons.forEach(button => {
+  const { action } = button.dataset;
+
+  button.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    lastPointerActionAt = Date.now();
+    handleControlAction(action);
+  });
+
+  button.addEventListener("click", () => {
+    if (Date.now() - lastPointerActionAt < 400) return;
+    handleControlAction(action);
+  });
 });
 
 // første render af tom leaderboard
