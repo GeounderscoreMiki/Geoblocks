@@ -349,7 +349,8 @@ touchButtons.forEach(button => {
   let suppressResetTimer;
 
   button.addEventListener("pointerdown", e => {
-    if (!e.isPrimary || e.button !== 0) return;
+    if (!e.isPrimary) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
     e.preventDefault();
     suppressNextClick = true;
     clearTimeout(suppressResetTimer);
