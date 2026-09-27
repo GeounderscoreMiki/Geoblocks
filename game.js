@@ -345,16 +345,24 @@ document.addEventListener("keydown", e => {
 
 touchButtons.forEach(button => {
   const { action } = button.dataset;
-  let lastPointerActionAt = 0;
+  let suppressNextClick = false;
+  let suppressResetTimer;
 
   button.addEventListener("pointerdown", e => {
     e.preventDefault();
-    lastPointerActionAt = Date.now();
+    suppressNextClick = true;
+    clearTimeout(suppressResetTimer);
+    suppressResetTimer = setTimeout(() => {
+      suppressNextClick = false;
+    }, 500);
     handleControlAction(action);
   });
 
-  button.addEventListener("click", e => {
-    if (e.detail !== 0 && Date.now() - lastPointerActionAt < 400) return;
+  button.addEventListener("click", () => {
+    if (suppressNextClick) {
+      suppressNextClick = false;
+      return;
+    }
     handleControlAction(action);
   });
 });
