@@ -353,8 +353,8 @@ touchButtons.forEach(button => {
     handleControlAction(action);
   });
 
-  button.addEventListener("click", () => {
-    if (Date.now() - lastPointerActionAt < 400) return;
+  button.addEventListener("click", e => {
+    if (e.detail !== 0 && Date.now() - lastPointerActionAt < 400) return;
     handleControlAction(action);
   });
 });
