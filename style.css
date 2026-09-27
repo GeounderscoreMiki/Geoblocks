@@ -1,0 +1,90 @@
+:root {
+  --bg: #111827;
+  --card: #1f2937;
+  --text: #f9fafb;
+  --accent: #22c55e;
+  --danger: #ef4444;
+  --muted: #9ca3af;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 560px;
+}
+
+h1, h2, h3 { margin-top: 0; }
+
+.card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+input, button {
+  font-size: 16px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+input {
+  width: 100%;
+  margin: 8px 0 10px;
+}
+
+button {
+  background: var(--accent);
+  color: #06210f;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover { filter: brightness(1.05); }
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+canvas {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  display: block;
+  margin: 0 auto 12px;
+  background: #0b1020;
+  border: 2px solid #374151;
+  border-radius: 8px;
+}
+
+.hint { color: var(--muted); }
+
+.message {
+  border-left: 5px solid var(--accent);
+  font-size: 18px;
+}
+
+.message.fail {
+  border-left-color: var(--danger);
+}
+
+.hidden { display: none; }
+
+#leaderboard li {
+  margin: 4px 0;
+}
