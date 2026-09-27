@@ -343,9 +343,9 @@ document.addEventListener("keydown", e => {
   }
 });
 
-let lastPointerActionAt = 0;
 touchButtons.forEach(button => {
   const { action } = button.dataset;
+  let lastPointerActionAt = 0;
 
   button.addEventListener("pointerdown", e => {
     e.preventDefault();
