@@ -41,42 +41,51 @@
   let dropCounter = 0;
 
   const SHAPES = [
-    [[1,1,1,1]],
-    [[2,2],[2,2]],
-    [[0,3,0],[3,3,3]],
-    [[4,0,0],[4,4,4]],
-    [[0,0,5],[5,5,5]],
-    [[0,6,6],[6,6,0]],
-    [[7,7,0],[0,7,7]]
+    [[1, 1, 1, 1]],
+    [[2, 2], [2, 2]],
+    [[0, 3, 0], [3, 3, 3]],
+    [[4, 0, 0], [4, 4, 4]],
+    [[0, 0, 5], [5, 5, 5]],
+    [[0, 6, 6], [6, 6, 0]],
+    [[7, 7, 0], [0, 7, 7]]
   ];
 
-  function createBoard(w, h) {
-    return Array.from({ length: h }, () => Array(w).fill(0));
+  function createBoard(width, height) {
+    return Array.from({ length: height }, () => Array(width).fill(0));
   }
 
   function createPiece() {
     const original = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-    const matrix = original.map(r => [...r]);
+    const matrix = original.map(row => [...row]);
     return {
       matrix,
-      pos: { x: Math.floor((BOARD_W - matrix[0].length) / 2), y: 0 }
+      pos: {
+        x: Math.floor((BOARD_W - matrix[0].length) / 2),
+        y: 0
+      }
     };
   }
 
-  function getColor(v) {
-    return {
-      1:"#22d3ee",2:"#facc15",3:"#a78bfa",4:"#fb923c",
-      5:"#60a5fa",6:"#34d399",7:"#f87171"
-    }[v] || "#fff";
+  function getColor(value) {
+    const colors = {
+      1: "#22d3ee",
+      2: "#facc15",
+      3: "#a78bfa",
+      4: "#fb923c",
+      5: "#60a5fa",
+      6: "#34d399",
+      7: "#f87171"
+    };
+    return colors[value] || "#ffffff";
   }
 
   function drawMatrix(matrix, offset) {
     matrix.forEach((row, y) => {
-      row.forEach((v, x) => {
-        if (v) {
-          ctx.fillStyle = getColor(v);
+      row.forEach((value, x) => {
+        if (value !== 0) {
+          ctx.fillStyle = getColor(value);
           ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
-          ctx.strokeStyle = "rgba(0,0,0,0.3)";
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
           ctx.lineWidth = 0.05;
           ctx.strokeRect(x + offset.x, y + offset.y, 1, 1);
         }
@@ -91,62 +100,97 @@
     if (piece) drawMatrix(piece.matrix, piece.pos);
   }
 
-  function collide(b, p) {
-    for (let y = 0; y < p.matrix.length; y++) {
-      for (let x = 0; x < p.matrix[y].length; x++) {
-        if (!p.matrix[y][x]) continue;
-        const bx = x + p.pos.x;
-        const by = y + p.pos.y;
-        if (bx < 0 || bx >= BOARD_W || by >= BOARD_H) return true;
-        if (by >= 0 && b[by][bx] !== 0) return true;
+  function collide(currentBoard, currentPiece) {
+    for (let y = 0; y < currentPiece.matrix.length; y++) {
+      for (let x = 0; x < currentPiece.matrix[y].length; x++) {
+        if (currentPiece.matrix[y][x] === 0) continue;
+
+        const boardX = x + currentPiece.pos.x;
+        const boardY = y + currentPiece.pos.y;
+
+        if (
+          boardX < 0 ||
+          boardX >= BOARD_W ||
+          boardY >= BOARD_H ||
+          (boardY >= 0 && currentBoard[boardY][boardX] !== 0)
+        ) {
+          return true;
+        }
       }
     }
     return false;
   }
 
-  function merge(b, p) {
-    p.matrix.forEach((row, y) => row.forEach((v, x) => {
-      if (!v) return;
-      const by = y + p.pos.y, bx = x + p.pos.x;
-      if (by >= 0 && by < BOARD_H && bx >= 0 && bx < BOARD_W) b[by][bx] = v;
-    }));
+  function merge(currentBoard, currentPiece) {
+    currentPiece.matrix.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if (value === 0) return;
+
+        const boardY = y + currentPiece.pos.y;
+        const boardX = x + currentPiece.pos.x;
+
+        if (
+          boardY >= 0 && boardY < BOARD_H &&
+          boardX >= 0 && boardX < BOARD_W
+        ) {
+          currentBoard[boardY][boardX] = value;
+        }
+      });
+    });
   }
 
-  function rotate90(matrix) {
-    const rows = matrix.length, cols = matrix[0].length;
-    const r = Array.from({ length: cols }, () => Array(rows).fill(0));
-    for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) r[x][rows - 1 - y] = matrix[y][x];
-    return r;
+  function rotate90Clockwise(matrix) {
+    const rows = matrix.length;
+    const columns = matrix[0].length;
+    const rotated = Array.from(
+      { length: columns },
+      () => Array(rows).fill(0)
+    );
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        rotated[x][rows - 1 - y] = matrix[y][x];
+      }
+    }
+
+    return rotated;
   }
 
   function playerRotate() {
     if (!running || !piece) return;
-    const old = piece.matrix.map(r => [...r]);
+
+    const oldMatrix = piece.matrix.map(row => [...row]);
     const oldX = piece.pos.x;
-    piece.matrix = rotate90(piece.matrix);
-    for (const k of [0, -1, 1, -2, 2]) {
-      piece.pos.x = oldX + k;
+
+    piece.matrix = rotate90Clockwise(piece.matrix);
+
+    for (const offset of [0, -1, 1, -2, 2]) {
+      piece.pos.x = oldX + offset;
       if (!collide(board, piece)) return;
     }
-    piece.matrix = old;
+
+    piece.matrix = oldMatrix;
     piece.pos.x = oldX;
   }
 
-  function playerMove(d) {
+  function playerMove(direction) {
     if (!running || !piece) return;
-    piece.pos.x += d;
-    if (collide(board, piece)) piece.pos.x -= d;
+
+    piece.pos.x += direction;
+    if (collide(board, piece)) piece.pos.x -= direction;
   }
 
   function lockPiece() {
     merge(board, piece);
     clearLines();
     piece = createPiece();
+
     if (collide(board, piece)) gameOver();
   }
 
   function playerDrop() {
     if (!running || !piece) return;
+
     piece.pos.y++;
     if (collide(board, piece)) {
       piece.pos.y--;
@@ -155,66 +199,97 @@
     dropCounter = 0;
   }
 
+  function hardDrop() {
+    if (!running || !piece) return;
+
+    while (!collide(board, piece)) piece.pos.y++;
+    piece.pos.y--;
+    lockPiece();
+    dropCounter = 0;
+  }
+
   function clearLines() {
     let cleared = 0;
+
     for (let y = BOARD_H - 1; y >= 0; y--) {
-      if (board[y].every(v => v !== 0)) {
+      if (board[y].every(value => value !== 0)) {
         board.splice(y, 1);
         board.unshift(Array(BOARD_W).fill(0));
         cleared++;
         y++;
       }
     }
-    if (!cleared) return;
-    score += (cleared === 4) ? 100 : cleared * 20;
+
+    if (cleared === 0) return;
+
+    score += cleared === 4 ? 100 : cleared * 20;
     scoreEl.textContent = score;
   }
 
-  function update(t = 0) {
+  function update(time = 0) {
     if (!running) return;
-    const dt = t - lastTime;
-    lastTime = t;
-    dropCounter += dt;
+
+    const deltaTime = time - lastTime;
+    lastTime = time;
+    dropCounter += deltaTime;
+
     if (dropCounter > DROP_INTERVAL) playerDrop();
+
     draw();
     requestAnimationFrame(update);
   }
 
   const LEADERBOARD_KEY = "geoBlocksLeaderboard";
+
   function getLeaderboard() {
-    try { return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]"); }
-    catch { return []; }
+    try {
+      return JSON.parse(localStorage.getItem(LEADERBOARD_KEY) || "[]");
+    } catch {
+      return [];
+    }
   }
+
   function saveLeaderboard(list) {
     localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(list));
   }
+
   function addScore(name, points) {
     const list = getLeaderboard();
     list.push({ name, points });
-    list.sort((a,b) => b.points - a.points);
+    list.sort((a, b) => b.points - a.points);
     saveLeaderboard(list.slice(0, 10));
   }
+
   function renderLeaderboard() {
     if (!leaderboardEl) return;
+
     leaderboardEl.innerHTML = "";
     const list = getLeaderboard();
-    if (!list.length) {
-      const li = document.createElement("li");
-      li.textContent = "Ingen scores endnu";
-      leaderboardEl.appendChild(li);
+
+    if (list.length === 0) {
+      const item = document.createElement("li");
+      item.textContent = "Ingen scores endnu";
+      leaderboardEl.appendChild(item);
       return;
     }
-    list.forEach((it, i) => {
-      const li = document.createElement("li");
-      li.textContent = `${i + 1}. ${it.name} — ${it.points} point`;
-      leaderboardEl.appendChild(li);
+
+    list.forEach((entry, index) => {
+      const item = document.createElement("li");
+      item.textContent = `${index + 1}. ${entry.name} — ${entry.points} point`;
+      leaderboardEl.appendChild(item);
     });
   }
 
   function startGame() {
-    const entered = playerNameInput.value.trim();
-    if (!entered) return alert("Skriv dit navn først 🙂");
-    playerName = entered;
+    const enteredName = playerNameInput.value.trim();
+
+    if (!enteredName) {
+      alert("Skriv dit navn først 🙂");
+      playerNameInput.focus();
+      return;
+    }
+
+    playerName = enteredName;
     score = 0;
     board = createBoard(BOARD_W, BOARD_H);
     piece = createPiece();
@@ -247,37 +322,70 @@
 
     if (score >= TARGET_SCORE) {
       messageEl.classList.remove("fail");
-      messageEl.innerHTML = `<strong>🎉 Tillykke ${playerName}!</strong><br>Koordinat:<br><code>${SECRET_COORDINATE}</code>`;
+      messageEl.innerHTML = `
+        <strong>🎉 Tillykke ${playerName}!</strong><br>
+        Du fik ${score} point og har fortjent koordinaten:<br><br>
+        <code>${SECRET_COORDINATE}</code>
+      `;
     } else {
       messageEl.classList.add("fail");
-      messageEl.innerHTML = `<strong>Game Over</strong><br>Score: ${score}<br>Mangler: ${TARGET_SCORE - score}`;
+      messageEl.innerHTML = `
+        <strong>Game Over</strong><br>
+        Score: ${score}<br>
+        Du mangler: ${TARGET_SCORE - score}
+      `;
     }
   }
 
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", event => {
     if (!running) return;
-    if (e.key === "ArrowLeft") { e.preventDefault(); playerMove(-1); }
-    if (e.key === "ArrowRight") { e.preventDefault(); playerMove(1); }
-    if (e.key === "ArrowDown") { e.preventDefault(); playerDrop(); }
-    if (e.key === "ArrowUp") { e.preventDefault(); playerRotate(); }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      playerMove(-1);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      playerMove(1);
+    } else if (event.key === "ArrowDown") {
+      event.preventDefault();
+      playerDrop();
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      playerRotate();
+    } else if (event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      hardDrop();
+    }
   });
 
-  document.querySelectorAll("[data-action]").forEach(btn => {
-    btn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      const a = btn.dataset.action;
-      if (a === "left") playerMove(-1);
-      if (a === "right") playerMove(1);
-      if (a === "down") playerDrop();
-      if (a === "rotate") playerRotate();
+  document.querySelectorAll("[data-action]").forEach(button => {
+    button.addEventListener("pointerdown", event => {
+      event.preventDefault();
+
+      switch (button.dataset.action) {
+        case "left":
+          playerMove(-1);
+          break;
+        case "right":
+          playerMove(1);
+          break;
+        case "down":
+          playerDrop();
+          break;
+        case "rotate":
+          playerRotate();
+          break;
+      }
     });
   });
 
   startBtn.addEventListener("click", startGame);
   restartBtn.addEventListener("click", startGame);
-  playerNameInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") startGame();
+
+  playerNameInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") startGame();
   });
 
   renderLeaderboard();
-  console.log
+  console.log("game.js loaded OK");
+})();
