@@ -127,3 +127,26 @@ canvas {
     grid-template-columns: 1fr;
   }
 }
+
+.mobile-controls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(48px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mobile-controls button {
+  font-size: 22px;
+  padding: 12px 0;
+  border-radius: 10px;
+  border: none;
+  background: #374151;
+  color: #f9fafb;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.mobile-controls button:active {
+  transform: scale(0.98);
+  background: #4b5563;
+}
