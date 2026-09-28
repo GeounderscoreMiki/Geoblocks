@@ -28,7 +28,16 @@
       <canvas id="game" width="300" height="600" aria-label="Tetris spillefelt"></canvas>
 
       <div class="controls card">
-        <p><strong>Kontrol:</strong> ⬅️➡️ flyt, ⬇️ ned, ⬆️ roter, mellemrum = drop</p>
+  <p><strong>Kontrol:</strong> ⬅️➡️ flyt, ⬇️ ned, ⬆️ roter, mellemrum = drop</p>
+
+  <div class="mobile-controls" aria-label="Mobilkontroller">
+    <button type="button" data-action="left" aria-label="Flyt venstre">◀</button>
+    <button type="button" data-action="right" aria-label="Flyt højre">▶</button>
+    <button type="button" data-action="down" aria-label="Flyt ned">▼</button>
+    <button type="button" data-action="rotate" aria-label="Roter brik">↻</button>
+    <button type="button" data-action="drop" aria-label="Hard drop">⤓</button>
+  </div>
+</div>
         <div class="touch-controls" role="group" aria-label="Mobilkontroller">
           <button type="button" class="touch-btn" data-action="left" aria-label="Flyt til venstre">⬅️ Venstre</button>
           <button type="button" class="touch-btn" data-action="right" aria-label="Flyt til højre">Højre ➡️</button>
