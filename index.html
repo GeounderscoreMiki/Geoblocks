@@ -14,7 +14,7 @@
       <h2>Start spil</h2>
       <label for="playerName">Skriv dit navn:</label>
       <input id="playerName" type="text" maxlength="20" placeholder="Fx Miki" />
-      <button id="startBtn">Start spil</button>
+      <button id="startBtn" type="button">Start spil</button>
       <p class="hint">Mål: Nå 1000 point før game over for at få koordinaten.</p>
     </section>
 
@@ -30,7 +30,6 @@
       <div class="controls card">
         <p><strong>Kontrol:</strong> ⬅️➡️ flyt, ⬇️ ned, ⬆️ roter, mellemrum = drop</p>
 
-        <!-- Ét simpelt sæt mobilknapper -->
         <div class="mobile-controls" aria-label="Mobilkontroller">
           <button type="button" data-action="left" aria-label="Flyt venstre">◀</button>
           <button type="button" data-action="rotate" aria-label="Roter brik">↻</button>
@@ -46,10 +45,11 @@
         <ol id="leaderboard"></ol>
       </section>
 
-      <button id="restartBtn" class="hidden">Spil igen</button>
+      <button id="restartBtn" type="button" class="hidden">Spil igen</button>
     </section>
   </div>
 
-  <script src="game.js"></script>
+  <!-- Versionsnummeret tvinger browseren til at hente den nye JavaScript-fil -->
+  <script src="game.js?v=20260928-2"></script>
 </body>
 </html>
