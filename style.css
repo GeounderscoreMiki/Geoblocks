@@ -7,7 +7,9 @@
   --muted: #9ca3af;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -24,7 +26,11 @@ body {
   max-width: 560px;
 }
 
-h1, h2, h3 { margin-top: 0; }
+h1,
+h2,
+h3 {
+  margin-top: 0;
+}
 
 .card {
   background: var(--card);
@@ -33,7 +39,8 @@ h1, h2, h3 { margin-top: 0; }
   margin-bottom: 12px;
 }
 
-input, button {
+input,
+button {
   font-size: 16px;
   padding: 10px;
   border-radius: 8px;
@@ -52,7 +59,9 @@ button {
   cursor: pointer;
 }
 
-button:hover { filter: brightness(1.05); }
+button:hover {
+  filter: brightness(1.05);
+}
 
 .topbar {
   display: flex;
@@ -72,39 +81,8 @@ canvas {
   border-radius: 8px;
 }
 
-.hint { color: var(--muted); }
-
-.controls p {
-  margin-top: 0;
-}
-
-.touch-controls {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  touch-action: none;
-}
-
-.touch-btn {
-  width: 100%;
-  min-height: 44px;
-  font-size: 15px;
-  color: var(--text);
-  background: #374151;
-  border: 1px solid #4b5563;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.touch-btn-drop {
-  grid-column: 1 / -1;
-  background: #065f46;
-  border-color: #10b981;
-}
-
-.touch-btn:focus-visible {
-  outline: 2px solid #93c5fd;
-  outline-offset: 2px;
+.hint {
+  color: var(--muted);
 }
 
 .message {
@@ -116,27 +94,24 @@ canvas {
   border-left-color: var(--danger);
 }
 
-.hidden { display: none; }
+.hidden {
+  display: none;
+}
 
 #leaderboard li {
   margin: 4px 0;
 }
 
-@media (max-width: 420px) {
-  .touch-controls {
-    grid-template-columns: 1fr;
-  }
-}
-
+/* Mobilkontroller: 4 simple knapper */
 .mobile-controls {
   display: grid;
-  grid-template-columns: repeat(5, minmax(48px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(56px, 1fr));
+  gap: 10px;
   margin-top: 10px;
 }
 
 .mobile-controls button {
-  font-size: 22px;
+  font-size: 24px;
   padding: 12px 0;
   border-radius: 10px;
   border: none;
