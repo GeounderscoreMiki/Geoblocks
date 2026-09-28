@@ -2,72 +2,104 @@
  * INDSTILLINGER
  ************************/
 const TARGET_SCORE = 1000;
-const SECRET_COORDINATE = "N 55° 40.123 E 012° 34.567"; // <-- Skift denne efter behov
+
+// SKIFT KOORDINATEN HER
+const SECRET_COORDINATE = "N 55° 40.123 E 012° 34.567";
+
 const BOARD_W = 10;
 const BOARD_H = 20;
-const BLOCK = 30;
-const DROP_INTERVAL = 500; // ms
+const BLOCK_SIZE = 30;
+const DROP_INTERVAL = 500;
+
 
 /***********************
- * DOM
+ * DOM-ELEMENTER
  ************************/
 const startScreen = document.getElementById("startScreen");
 const gameScreen = document.getElementById("gameScreen");
+
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
+
 const playerNameInput = document.getElementById("playerName");
 const currentPlayerEl = document.getElementById("currentPlayer");
 const scoreEl = document.getElementById("score");
 const targetScoreEl = document.getElementById("targetScore");
+
 const messageEl = document.getElementById("message");
 const leaderboardEl = document.getElementById("leaderboard");
-const touchButtons = document.querySelectorAll(".touch-btn");
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-ctx.scale(BLOCK, BLOCK);
+
+ctx.scale(BLOCK_SIZE, BLOCK_SIZE);
+
 
 /***********************
- * SPILSTATE
+ * SPIL-STATE
  ************************/
-let board, piece, score, playerName;
+let board = [];
+let piece = null;
+let score = 0;
+let playerName = "";
+
+let running = false;
 let lastTime = 0;
 let dropCounter = 0;
-let running = false;
+
 
 /***********************
- * TETROMINOER
+ * KLASSISKE TETRIS-BRIKKER
  ************************/
 const SHAPES = [
-  [[1, 1, 1, 1, 1]],   // I5 (giver mulighed for 5 linjer i denne variant)
-  [[2, 2], [2, 2]],    // O
-  [[0, 3, 0], [3, 3, 3]], // T
-  [[4, 0, 0], [4, 4, 4]], // L
-  [[0, 0, 5], [5, 5, 5]], // J
-  [[0, 6, 6], [6, 6, 0]], // S
-  [[7, 7, 0], [0, 7, 7]]  // Z
+  // I-brik
+  [
+    [1, 1, 1, 1]
+  ],
+
+  // O-brik
+  [
+    [2, 2],
+    [2, 2]
+  ],
+
+  // T-brik
+  [
+    [0, 3, 0],
+    [3, 3, 3]
+  ],
+
+  // L-brik
+  [
+    [4, 0, 0],
+    [4, 4, 4]
+  ],
+
+  // J-brik
+  [
+    [0, 0, 5],
+    [5, 5, 5]
+  ],
+
+  // S-brik
+  [
+    [0, 6, 6],
+    [6, 6, 0]
+  ],
+
+  // Z-brik
+  [
+    [7, 7, 0],
+    [0, 7, 7]
+  ]
 ];
 
-function createBoard(w, h) {
-  return Array.from({ length: h }, () => Array(w).fill(0));
-}
-
-function randomPiece() {
-  const shape = SHAPES[(Math.random() * SHAPES.length) | 0];
-  return {
-    matrix: shape.map(row => [...row]),
-    pos: {
-      x: ((BOARD_W / 2) | 0) - ((shape[0].length / 2) | 0),
-      y: 0
-    }
-  };
-}
 
 /***********************
- * TEGN
+ * FARVER
  ************************/
-function color(v) {
-  const map = {
+function getColor(value) {
+  const colors = {
     1: "#22d3ee",
     2: "#facc15",
     3: "#a78bfa",
@@ -76,144 +108,307 @@ function color(v) {
     6: "#34d399",
     7: "#f87171"
   };
-  return map[v] || "#fff";
+
+  return colors[value] || "#ffffff";
 }
 
+
+/***********************
+ * OPRET SPILLEBRÆT
+ ************************/
+function createBoard(width, height) {
+  return Array.from(
+    { length: height },
+    () => Array(width).fill(0)
+  );
+}
+
+
+/***********************
+ * OPRET NY BRIK
+ ************************/
+function createPiece() {
+  const originalShape =
+    SHAPES[Math.floor(Math.random() * SHAPES.length)];
+
+  // Lav en kopi, så originalformen ikke ændres
+  const matrix = originalShape.map(row => [...row]);
+
+  return {
+    matrix,
+    pos: {
+      x: Math.floor((BOARD_W - matrix[0].length) / 2),
+      y: 0
+    }
+  };
+}
+
+
+/***********************
+ * TEGNING
+ ************************/
 function drawMatrix(matrix, offset) {
   matrix.forEach((row, y) => {
-    row.forEach((v, x) => {
-      if (v !== 0) {
-        ctx.fillStyle = color(v);
-        ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
+    row.forEach((value, x) => {
+      if (value !== 0) {
+        ctx.fillStyle = getColor(value);
+
+        ctx.fillRect(
+          x + offset.x,
+          y + offset.y,
+          1,
+          1
+        );
+
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+        ctx.lineWidth = 0.05;
+
+        ctx.strokeRect(
+          x + offset.x,
+          y + offset.y,
+          1,
+          1
+        );
       }
     });
   });
+}
+
+function drawGrid() {
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.lineWidth = 0.03;
+
+  for (let x = 0; x <= BOARD_W; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, BOARD_H);
+    ctx.stroke();
+  }
+
+  for (let y = 0; y <= BOARD_H; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(BOARD_W, y);
+    ctx.stroke();
+  }
 }
 
 function draw() {
   ctx.fillStyle = "#0b1020";
   ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+
+  drawGrid();
   drawMatrix(board, { x: 0, y: 0 });
-  drawMatrix(piece.matrix, piece.pos);
+
+  if (piece) {
+    drawMatrix(piece.matrix, piece.pos);
+  }
 }
 
+
 /***********************
- * LOGIK
+ * KOLLISION
  ************************/
-function collide(b, p) {
-  for (let y = 0; y < p.matrix.length; y++) {
-    for (let x = 0; x < p.matrix[y].length; x++) {
-      if (p.matrix[y][x] !== 0) {
-        const by = y + p.pos.y;
-        const bx = x + p.pos.x;
+function collide(currentBoard, currentPiece) {
+  const matrix = currentPiece.matrix;
+  const position = currentPiece.pos;
+
+  for (let y = 0; y < matrix.length; y++) {
+    for (let x = 0; x < matrix[y].length; x++) {
+      if (matrix[y][x] !== 0) {
+        const boardX = x + position.x;
+        const boardY = y + position.y;
+
         if (
-          by < 0 || by >= BOARD_H ||
-          bx < 0 || bx >= BOARD_W ||
-          b[by][bx] !== 0
-        ) return true;
+          boardX < 0 ||
+          boardX >= BOARD_W ||
+          boardY >= BOARD_H ||
+          (
+            boardY >= 0 &&
+            currentBoard[boardY][boardX] !== 0
+          )
+        ) {
+          return true;
+        }
       }
     }
   }
+
   return false;
 }
 
-function merge(b, p) {
-  p.matrix.forEach((row, y) => {
-    row.forEach((v, x) => {
-      if (v !== 0) b[y + p.pos.y][x + p.pos.x] = v;
+
+/***********************
+ * LÆG BRIK PÅ BRÆTTET
+ ************************/
+function merge(currentBoard, currentPiece) {
+  currentPiece.matrix.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value !== 0) {
+        const boardX = x + currentPiece.pos.x;
+        const boardY = y + currentPiece.pos.y;
+
+        if (
+          boardX >= 0 &&
+          boardX < BOARD_W &&
+          boardY >= 0 &&
+          boardY < BOARD_H
+        ) {
+          currentBoard[boardY][boardX] = value;
+        }
+      }
     });
   });
 }
 
-function rotate(matrix) {
-  // transpose + reverse rows
-  const m = matrix.map((_, i) => matrix.map(r => r[i]));
-  m.forEach(r => r.reverse());
-  return m;
+
+/***********************
+ * ROTATION - 90 GRADER
+ ************************/
+function rotate90Clockwise(matrix) {
+  const rows = matrix.length;
+  const columns = matrix[0].length;
+
+  const rotated = Array.from(
+    { length: columns },
+    () => Array(rows).fill(0)
+  );
+
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < columns; x++) {
+      rotated[x][rows - 1 - y] = matrix[y][x];
+    }
+  }
+
+  return rotated;
 }
 
 function playerRotate() {
-  const prev = piece.matrix;
-  piece.matrix = rotate(piece.matrix);
+  if (!running || !piece) return;
 
-  // wall-kick light
+  const oldMatrix = piece.matrix.map(row => [...row]);
   const oldX = piece.pos.x;
-  let offset = 1;
-  while (collide(board, piece)) {
-    piece.pos.x += offset;
-    offset = -(offset + (offset > 0 ? 1 : -1));
-    if (Math.abs(offset) > piece.matrix[0].length) {
-      piece.matrix = prev;
-      piece.pos.x = oldX;
+
+  // Roter præcis 90 grader med uret
+  piece.matrix = rotate90Clockwise(piece.matrix);
+
+  // Hjælper brikken væk fra kanten
+  const wallKicks = [0, -1, 1, -2, 2];
+
+  for (const offset of wallKicks) {
+    piece.pos.x = oldX + offset;
+
+    if (!collide(board, piece)) {
       return;
     }
   }
+
+  // Fortryd rotationen hvis der ikke er plads
+  piece.matrix = oldMatrix;
+  piece.pos.x = oldX;
 }
 
-function playerMove(dir) {
-  piece.pos.x += dir;
-  if (collide(board, piece)) piece.pos.x -= dir;
+
+/***********************
+ * SPILLERKONTROLLER
+ ************************/
+function playerMove(direction) {
+  if (!running || !piece) return;
+
+  piece.pos.x += direction;
+
+  if (collide(board, piece)) {
+    piece.pos.x -= direction;
+  }
 }
 
 function playerDrop() {
+  if (!running || !piece) return;
+
   piece.pos.y++;
+
   if (collide(board, piece)) {
     piece.pos.y--;
-    merge(board, piece);
-    clearLines();
-    piece = randomPiece();
-
-    if (collide(board, piece)) {
-      gameOver();
-    }
+    lockPiece();
   }
+
   dropCounter = 0;
 }
 
 function hardDrop() {
+  if (!running || !piece) return;
+
   while (!collide(board, piece)) {
     piece.pos.y++;
   }
+
   piece.pos.y--;
-  merge(board, piece);
-  clearLines();
-  piece = randomPiece();
-  if (collide(board, piece)) gameOver();
+
+  lockPiece();
   dropCounter = 0;
 }
 
-function clearLines() {
-  let cleared = 0;
+function lockPiece() {
+  merge(board, piece);
+  clearLines();
 
-  outer: for (let y = BOARD_H - 1; y >= 0; y--) {
-    for (let x = 0; x < BOARD_W; x++) {
-      if (board[y][x] === 0) continue outer;
-    }
-    const row = board.splice(y, 1)[0].fill(0);
-    board.unshift(row);
-    cleared++;
-    y++;
-  }
+  piece = createPiece();
 
-  if (cleared > 0) {
-    // Regel:
-    // 10 point pr linje
-    // 60 point hvis 5 linjer på én gang
-    if (cleared === 5) {
-      score += 60;
-    } else {
-      score += cleared * 10;
-    }
-    scoreEl.textContent = score;
+  if (collide(board, piece)) {
+    gameOver();
   }
 }
 
+
+/***********************
+ * LINJER OG POINT
+ ************************/
+function clearLines() {
+  let clearedLines = 0;
+
+  for (let y = BOARD_H - 1; y >= 0; y--) {
+    const isFull = board[y].every(value => value !== 0);
+
+    if (isFull) {
+      board.splice(y, 1);
+      board.unshift(Array(BOARD_W).fill(0));
+
+      clearedLines++;
+      y++;
+    }
+  }
+
+  if (clearedLines === 0) {
+    return;
+  }
+
+  /*
+   * Pointsystem:
+   * 1 linje = 10 point
+   * 2 linjer = 20 point
+   * 3 linjer = 30 point
+   * 4 linjer = 60 point
+   */
+  if (clearedLines === 4) {
+    score += 60;
+  } else {
+    score += clearedLines * 10;
+  }
+
+  scoreEl.textContent = score;
+}
+
+
+/***********************
+ * SPILLELOOP
+ ************************/
 function update(time = 0) {
   if (!running) return;
 
-  const delta = time - lastTime;
+  const deltaTime = time - lastTime;
+
   lastTime = time;
-  dropCounter += delta;
+  dropCounter += deltaTime;
 
   if (dropCounter > DROP_INTERVAL) {
     playerDrop();
@@ -223,53 +418,88 @@ function update(time = 0) {
   requestAnimationFrame(update);
 }
 
+
 /***********************
- * LEADERBOARD (localStorage)
+ * LEADERBOARD
  ************************/
-const LS_KEY = "geoBlocksLeaderboard";
+const LEADERBOARD_KEY = "geoBlocksLeaderboard";
 
 function getLeaderboard() {
-  return JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+  try {
+    return JSON.parse(
+      localStorage.getItem(LEADERBOARD_KEY) || "[]"
+    );
+  } catch {
+    return [];
+  }
 }
 
-function saveLeaderboard(data) {
-  localStorage.setItem(LS_KEY, JSON.stringify(data));
+function saveLeaderboard(list) {
+  localStorage.setItem(
+    LEADERBOARD_KEY,
+    JSON.stringify(list)
+  );
 }
 
 function addScore(name, points) {
   const list = getLeaderboard();
-  list.push({ name, points });
+
+  list.push({
+    name,
+    points
+  });
+
   list.sort((a, b) => b.points - a.points);
+
   saveLeaderboard(list.slice(0, 10));
 }
 
 function renderLeaderboard() {
-  const list = getLeaderboard();
-  leaderboardEl.innerHTML = "";
-  list.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = `${item.name} — ${item.points} point`;
-    leaderboardEl.appendChild(li);
-  });
-}
+  if (!leaderboardEl) return;
 
-/***********************
- * FLOW
- ************************/
-function startGame() {
-  const name = playerNameInput.value.trim();
-  if (!name) {
-    alert("Skriv dit navn først 🙂");
+  const list = getLeaderboard();
+
+  leaderboardEl.innerHTML = "";
+
+  if (list.length === 0) {
+    const emptyItem = document.createElement("li");
+    emptyItem.textContent = "Ingen scores endnu";
+    leaderboardEl.appendChild(emptyItem);
     return;
   }
 
-  playerName = name;
+  list.forEach((item, index) => {
+    const listItem = document.createElement("li");
+
+    listItem.textContent =
+      `${index + 1}. ${item.name} — ${item.points} point`;
+
+    leaderboardEl.appendChild(listItem);
+  });
+}
+
+
+/***********************
+ * START SPIL
+ ************************/
+function startGame() {
+  const enteredName = playerNameInput.value.trim();
+
+  if (!enteredName) {
+    alert("Skriv dit navn først 🙂");
+    playerNameInput.focus();
+    return;
+  }
+
+  playerName = enteredName;
   score = 0;
+
   board = createBoard(BOARD_W, BOARD_H);
-  piece = randomPiece();
+  piece = createPiece();
+
   running = true;
-  dropCounter = 0;
   lastTime = 0;
+  dropCounter = 0;
 
   currentPlayerEl.textContent = playerName;
   scoreEl.textContent = score;
@@ -277,17 +507,24 @@ function startGame() {
 
   messageEl.classList.add("hidden");
   messageEl.classList.remove("fail");
+
   restartBtn.classList.add("hidden");
 
   startScreen.classList.add("hidden");
   gameScreen.classList.remove("hidden");
 
   renderLeaderboard();
+  draw();
   update();
 }
 
+
+/***********************
+ * GAME OVER
+ ************************/
 function gameOver() {
   running = false;
+
   addScore(playerName, score);
   renderLeaderboard();
 
@@ -295,79 +532,150 @@ function gameOver() {
   restartBtn.classList.remove("hidden");
 
   if (score >= TARGET_SCORE) {
+    messageEl.classList.remove("fail");
+
     messageEl.innerHTML = `
-      <strong>🎉 Flot ${playerName}!</strong><br>
-      Du nåede ${score} point og har fortjent koordinaten:<br>
+      <strong>🎉 Tillykke ${playerName}!</strong><br>
+      Du fik ${score} point og har fortjent koordinaten:<br><br>
       <code>${SECRET_COORDINATE}</code>
     `;
-    messageEl.classList.remove("fail");
   } else {
+    messageEl.classList.add("fail");
+
+    const missingPoints = TARGET_SCORE - score;
+
     messageEl.innerHTML = `
       <strong>Game Over, ${playerName}</strong><br>
-      Du fik ${score} point. Du mangler ${TARGET_SCORE - score} point for at få koordinaten.
+      Du fik ${score} point.<br>
+      Du mangler ${missingPoints} point for at få koordinaten.
     `;
-    messageEl.classList.add("fail");
   }
 }
 
-function restartGame() {
-  startGame();
-}
-
-function handleControlAction(action) {
-  if (!running) return;
-
-  if (action === "left") playerMove(-1);
-  else if (action === "right") playerMove(1);
-  else if (action === "down") playerDrop();
-  else if (action === "rotate") playerRotate();
-  else if (action === "drop") hardDrop();
-}
 
 /***********************
- * EVENTS
+ * TASTATURSTYRING
  ************************/
-startBtn.addEventListener("click", startGame);
-restartBtn.addEventListener("click", restartGame);
-
-document.addEventListener("keydown", e => {
+document.addEventListener("keydown", event => {
   if (!running) return;
 
-  if (e.key === "ArrowLeft") handleControlAction("left");
-  else if (e.key === "ArrowRight") handleControlAction("right");
-  else if (e.key === "ArrowDown") handleControlAction("down");
-  else if (e.key === "ArrowUp") handleControlAction("rotate");
-  else if (e.code === "Space") {
-    e.preventDefault();
-    handleControlAction("drop");
+  switch (event.key) {
+    case "ArrowLeft":
+      event.preventDefault();
+      playerMove(-1);
+      break;
+
+    case "ArrowRight":
+      event.preventDefault();
+      playerMove(1);
+      break;
+
+    case "ArrowDown":
+      event.preventDefault();
+      playerDrop();
+      break;
+
+    case "ArrowUp":
+      event.preventDefault();
+      playerRotate();
+      break;
+
+    case " ":
+    case "Spacebar":
+      event.preventDefault();
+      hardDrop();
+      break;
   }
 });
 
-touchButtons.forEach(button => {
-  const { action } = button.dataset;
-  let suppressNextClick = false;
-  let suppressResetTimer;
 
-  button.addEventListener("pointerdown", e => {
-    if (!e.isPrimary) return;
-    if (e.pointerType === "mouse" && e.button !== 0) return;
-    e.preventDefault();
-    suppressNextClick = true;
-    clearTimeout(suppressResetTimer);
-    suppressResetTimer = setTimeout(() => {
-      suppressNextClick = false;
-    }, 500);
-    handleControlAction(action);
-  });
+/***********************
+ * MOBILKNAPPER
+ ************************/
+function performControl(action) {
+  if (!running) return;
 
-  button.addEventListener("click", () => {
-    if (suppressNextClick) {
-      suppressNextClick = false;
-      return;
-    }
-    handleControlAction(action);
+  switch (action) {
+    case "left":
+      playerMove(-1);
+      break;
+
+    case "right":
+      playerMove(1);
+      break;
+
+    case "down":
+      playerDrop();
+      break;
+
+    case "rotate":
+      playerRotate();
+      break;
+
+    case "drop":
+      hardDrop();
+      break;
+  }
+}
+
+// Understøtter knapper med data-action,
+// fx: <button data-action="left">◀</button>
+document.querySelectorAll("[data-action]").forEach(button => {
+  button.addEventListener("pointerdown", event => {
+    event.preventDefault();
+
+    const action = button.dataset.action;
+    performControl(action);
   });
 });
 
-// første render af tom leaderboard
+
+/***********************
+ * ALTERNATIVE KNAP-ID'ER
+ ************************/
+const mobileButtonActions = {
+  moveLeftBtn: "left",
+  moveRightBtn: "right",
+  moveDownBtn: "down",
+  rotateBtn: "rotate",
+  hardDropBtn: "drop"
+};
+
+Object.entries(mobileButtonActions).forEach(
+  ([buttonId, action]) => {
+    const button = document.getElementById(buttonId);
+
+    if (!button) return;
+
+    button.addEventListener("pointerdown", event => {
+      event.preventDefault();
+      performControl(action);
+    });
+  }
+);
+
+
+/***********************
+ * START-, RESTART- OG ENTER-KNAPPER
+ ************************/
+if (startBtn) {
+  startBtn.addEventListener("click", startGame);
+}
+
+if (restartBtn) {
+  restartBtn.addEventListener("click", startGame);
+}
+
+if (playerNameInput) {
+  playerNameInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      startGame();
+    }
+  });
+}
+
+
+/***********************
+ * FØRSTE VISNING
+ ************************/
 renderLeaderboard();
