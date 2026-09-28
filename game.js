@@ -53,3 +53,5 @@
   <script src="game.js"></script>
 </body>
 </html>
+
+console.log("game.js loaded");
